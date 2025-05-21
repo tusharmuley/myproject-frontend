@@ -19,6 +19,8 @@
 .heading {
   font-size: 2rem;
   font-weight: bold;
+  text-align: center;
+  margin-bottom: 30px;
 }
 
 /* Logout button style */
@@ -33,13 +35,7 @@
   font-size: 1rem;
 }
 
-
-
-.heading {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
+/* Task form container */
 .task-form {
   background-color: #f5f5f5;
   padding: 15px;
@@ -47,19 +43,28 @@
   margin-bottom: 30px;
 }
 
-.task-form label {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.task-form input,
-.task-form select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
+/* Grouped form input structure */
+.task-form .form-group {
+  display: flex;
+  flex-direction: column;
   margin-bottom: 15px;
 }
 
+.task-form .form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.task-form .form-group input,
+.task-form .form-group select {
+  padding: 8px;
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* Buttons inside form */
 .task-form button {
   padding: 8px 15px;
   margin-right: 10px;
@@ -70,15 +75,18 @@
   border: none;
 }
 
+/* Filter box */
 .filter-box {
   margin-bottom: 20px;
 }
 
+/* Task list */
 .task-list {
   list-style: none;
   padding: 0;
 }
 
+/* Individual task item */
 .task-item {
   background-color: #eef;
   padding: 15px;
@@ -89,6 +97,7 @@
   align-items: center;
 }
 
+/* Task status styles */
 .task-item.completed {
   background-color: #d4edda;
 }
@@ -97,6 +106,7 @@
   background-color: #fff3cd;
 }
 
+/* Task info text */
 .task-info h3 {
   margin: 0;
 }
@@ -105,14 +115,13 @@
   margin: 5px 0 0 0;
 }
 
+/* Buttons in task item */
 .buttons button {
   margin-left: 8px;
 }
 
+/* Delete button style */
 .delete {
   background-color: #f44336;
   color: white;
 }
-
-
-

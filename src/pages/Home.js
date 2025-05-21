@@ -108,8 +108,9 @@ function Home() {
       
       <form onSubmit={handleSubmit} className="task-form">
         <h2>{selectedTask ? "✏️ Edit Task" : "➕ Add New Task"}</h2>
-        <label>
-          Task Name:
+
+        <div className="form-group">
+          <label>Task Name:</label>
           <input
             type="text"
             value={title}
@@ -117,20 +118,20 @@ function Home() {
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-        </label>
+        </div>
 
-        <label>
-          Deadline:
+        <div className="form-group">
+          <label>Deadline:</label>
           <input
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
             required
           />
-        </label>
+        </div>
 
-        <label>
-          Priority:
+        <div className="form-group">
+          <label>Priority:</label>
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
@@ -139,7 +140,7 @@ function Home() {
             <option value="medium">Medium 🟡</option>
             <option value="high">High 🔴</option>
           </select>
-        </label>
+        </div>
 
         <div className="form-buttons">
           <button type="submit">
@@ -161,6 +162,7 @@ function Home() {
           )}
         </div>
       </form>
+
 
       <div className="filter-box">
         <label>Filter by Status:</label>
