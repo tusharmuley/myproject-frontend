@@ -34,7 +34,8 @@
   .auth-form button {
     width: 100%;
     padding: 12px;
-    background-color: #007bff;
+    /* background-color: #007bff; */
+    background-color:deeppink;
     color: white;
     border: none;
     font-weight: bold;
