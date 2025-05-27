@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef  } from "react";
 import axios from "axios";
 import "./Home.css";
 
@@ -11,6 +11,13 @@ function Home() {
   const [filter, setFilter] = useState("all");
   const [selectedTask, setSelectedTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [profile, setProfile] = useState(null); 
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const [showPopup, setShowPopup] = useState(false);
+  const popupRef = useRef();
+
+
 
   const token = localStorage.getItem("access");
 
@@ -101,17 +108,113 @@ function Home() {
   const filteredTasks =
     filter === "all" ? tasks : tasks.filter((task) => task.status === filter);
 
+  useEffect(() => {
+    // Fetch current profile
+    axios.get(`${process.env.REACT_APP_API_URL}/profile/`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    .then(res => setProfile(res.data))
+    .catch(err => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShowPopup(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      handleUpload(file);
+      setShowPopup(false);
+    }
+  };
+
+  const handleUpload = async (file) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+
+    try {
+      await axios.put(`${process.env.REACT_APP_API_URL}/upload-picture/`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      alert('Profile picture updated!');
+      window.location.reload();
+    } catch (err) {
+      alert('Upload failed');
+      console.error(err);
+    }
+  };
+
+
   return (
-    <div className="container">
-      <div className="header-bar">
-        <h1 className="heading">🗂️ My Task Manager</h1>
-        <div>
-          <button className="logout-btn" onClick={logout}>
-            🔒 Logout
-          </button>
+  <>
+    <div className="container mx-auto p-6 max-w-5xl">
+      <div className="flex items-center justify-between mb-20 border-b pb-4 header_section">
+        <h1 className="text-3xl font-extrabold">🗂️ My Task Manager</h1>
+        <div className="profile-wrapper relative inline-block">
+          {profile?.profile_picture ? (
+            <img
+              src={profile.profile_picture}
+              alt="Profile"
+              className="profile-img"
+              onClick={() => setShowPopup((prev) => !prev)}
+              title="Click to open profile options"
+            />
+          ) : (
+            <div
+              className="profile-img no-image"
+              onClick={() => setShowPopup((prev) => !prev)}
+              title="Click to open profile options"
+            >
+              No Image
+            </div>
+          )}
+
+          {showPopup && (
+            <div className="profile-popup" ref={popupRef}>
+              <label
+                htmlFor="profile-upload"
+                className="popup-item"
+                onClick={() => handleFileChange}
+              >
+                Change Profile
+              </label>
+              <input
+                id="profile-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={() => {
+                  logout();
+                  setShowPopup(false);
+                }}
+                className="popup-item logout-btn"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
       <div className="main-layout">
         <div className="task-list-section">
           <div className="filter-box">
@@ -134,9 +237,7 @@ function Home() {
                 ➕ Create Task
               </button>
             </div>
-            
           </div>
-          
 
           {filteredTasks.length === 0 ? (
             <div className="no-tasks">🚫 No tasks found. Create a task!</div>
@@ -251,7 +352,9 @@ function Home() {
         )}
       </div>
     </div>
-  );
+  </>
+  );  
+
 }
 
 export default Home;
