@@ -182,7 +182,7 @@ function Home() {
               onClick={() => setShowPopup((prev) => !prev)}
               title="Click to open profile options"
             >
-              No Image
+              <span style={{fontSize:"35px"}}>👤</span>
             </div>
           )}
 
