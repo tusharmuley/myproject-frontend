@@ -9,6 +9,10 @@ function Home() {
   const [priority, setPriority] = useState("medium");
   const [deadline, setDeadline] = useState("");
   const [filter, setFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all"); // new priority filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+  const [userFilter, setUserFilter] = useState("all"); // all | created | assigned
   const [selectedTask, setSelectedTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [profile, setProfile] = useState(null); 
@@ -38,6 +42,7 @@ function Home() {
   }, []);
 
   const handleSubmit = (e) => {
+    console.log('assinged to vlue',assignedTo)
     e.preventDefault();
     const payload = {
       title,
@@ -45,6 +50,7 @@ function Home() {
       status: selectedTask?.status || "pending",
       priority,
       deadline,
+      assigned_to:assignedTo
     };
 
     const url = selectedTask
@@ -83,7 +89,11 @@ function Home() {
     axios
       .put(
         `${process.env.REACT_APP_API_URL}/tasks/update/${task.id}/`,
-        { ...task, status: newStatus },
+        { ...task,
+          status: newStatus ,
+          assigned_to: task.assigned_to?.id || null,
+          created_by: task.created_by?.id || null
+        },
         { headers }
       )
       .then(fetchTasks)
@@ -105,8 +115,38 @@ function Home() {
     window.location.href = "/login";
   };
 
-  const filteredTasks =
-    filter === "all" ? tasks : tasks.filter((task) => task.status === filter);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500); // ⏱️ 500ms delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+
+  const filteredTasks = tasks.filter((task) => {
+    const statusMatch = filter === "all" || task.status === filter;
+    const priorityMatch = priorityFilter === "all" || task.priority === priorityFilter;
+
+    const searchMatch =
+      task.title.toLowerCase().includes(debouncedQuery) ||
+      task.description.toLowerCase().includes(debouncedQuery) ||
+      task.status.toLowerCase().includes(debouncedQuery) ||
+      task.priority.toLowerCase().includes(debouncedQuery);
+
+    const userMatch =
+      userFilter === "all" ||
+      (userFilter === "created" && task.created_by?.id === profile?.id) ||
+      (userFilter === "assigned" && task.assigned_to?.id === profile?.id);
+
+    return statusMatch && priorityMatch && searchMatch && userMatch;
+  });
+
+
+
+
 
   useEffect(() => {
     // Fetch current profile
@@ -160,6 +200,43 @@ function Home() {
       console.error(err);
     }
   };
+
+  const fetchUsers = async (query = "") => {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/getusers/?search=${query}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    setUserOptions(data);
+  };
+
+  const [searchTerm, setSearchTerm] = useState(""); // what user types
+  const [assignedTo, setAssignedTo] = useState("");
+  const [userOptions, setUserOptions] = useState([]);
+
+  // 👇 DEBOUNCE LOGIC
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (searchTerm.length > 0) {
+        fetchUsers(searchTerm);
+      } else {
+        setUserOptions([]); // if search empty, clear
+      }
+    }, 500); // wait 500ms after typing stops
+
+    return () => clearTimeout(delayDebounce); // clear timeout if user types again
+  }, [searchTerm]);
+
+
+  const clearFilters = () => {
+    setFilter("all");           // Status filter
+    setPriorityFilter("all");   // Priority filter
+    setUserFilter("all");       // Created/Assigned filter
+    setSearchQuery("");         // Search box
+  };
+
+  
 
 
   return (
@@ -219,13 +296,15 @@ function Home() {
         <div className="task-list-section">
           <div className="filter-box">
             <div>
-              <label>Filter by Status:</label>
-              <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-                <option value="all">All Tasks</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-              </select>
+              <label>Search: </label>
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value.toLowerCase())}
+              />
             </div>
+            
             <div>
               <button
                 className="create-btn"
@@ -237,6 +316,41 @@ function Home() {
                 ➕ Create Task
               </button>
             </div>
+          </div>
+          <div className="filter-box">
+            <div>
+              <label>Filter by Status: </label>
+              <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                <option value="all">All Tasks</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label>Priority: </label>
+              <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div>
+              <label>User Role : </label>
+              <select value={userFilter} onChange={(e) => setUserFilter(e.target.value)}>
+                <option value="all">All</option>
+                <option value="created">Created by Me</option>
+                <option value="assigned">Assigned to Me</option>
+              </select>
+            </div>
+            <div>
+              <button onClick={clearFilters}>
+                Clear Filters
+              </button>
+
+            </div>
+            
+
           </div>
 
           {filteredTasks.length === 0 ? (
@@ -252,6 +366,10 @@ function Home() {
                         <strong>Deadline:</strong> {task.deadline} |{' '}
                         <strong>Priority:</strong> {task.priority} |{' '}
                         <strong>Status:</strong> {task.status}
+                      </p>
+                      <p>
+                        <strong>Created by:</strong> {task.created_by?.username||""} |{' '}
+                        <strong> Assigned by:</strong> {task.assigned_to?.username||""}
                       </p>
                     </div>
                     <div className="buttons">
@@ -315,6 +433,51 @@ function Home() {
                   />
                 </div>
 
+                <div className="form-group">
+                  <label>Assigned to:</label>
+
+                  {/* INPUT FIELD for typing/searching user */}
+                  <input
+                    type="text"
+                    placeholder="Search user..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setAssignedTo(""); // Clear selected when typing
+                    }}
+                  />
+
+                  {/* DROPDOWN with all matched users */}
+                  {userOptions.length > 0 ? (
+                    <select
+                      value={assignedTo}
+                      onChange={(e) => {
+                        const selectedUserId = e.target.value;
+                        setAssignedTo(selectedUserId);
+
+                        const selectedUser = userOptions.find(
+                          (u) => u.id.toString() === selectedUserId
+                        );
+
+                        if (selectedUser) {
+                          setSearchTerm(selectedUser.username); // show name in input
+                        }
+                      }}
+                    >
+                      <option value="">Select a user</option>
+                      {userOptions.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.username}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select disabled>
+                      <option>No users found</option>
+                    </select>
+                  )}
+                </div>
+                
                 <div className="form-group">
                   <label>Priority:</label>
                   <select
