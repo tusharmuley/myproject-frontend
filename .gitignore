@@ -15,6 +15,7 @@ yarn-error.log*
 
 deploy_frontend.sh
 build.tar.gz
+dockerfile
 
 # IDE/editor settings
 .vscode/
